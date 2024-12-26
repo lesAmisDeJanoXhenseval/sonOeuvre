@@ -1,9 +1,11 @@
 //##############################################################################################################################################
 //##############################################################################################################################################
 //update path based on the language
+// Update path based on the language
 document.addEventListener("DOMContentLoaded", () => {
     const langSwitchLinks = document.querySelectorAll(".lang-switch a");
 
+    // Handle language switch links
     langSwitchLinks.forEach(link => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
@@ -16,22 +18,52 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Ensure the correct language is loaded based on localStorage
+    // Ensure correct language is loaded on initial page load
     const preferredLang = localStorage.getItem("preferredLang");
+    const isOnEnglishPage = window.location.pathname.includes('/en/');
+    const isOnFrenchPage = window.location.pathname.includes('/fr/');
+
+    // Extract the current page's path after the language folder
+    const currentPath = window.location.pathname;
+    const langPrefix = currentPath.includes('/en/') ? '/en/' : '/fr/';
+    const pathAfterLang = currentPath.substring(currentPath.indexOf(langPrefix) + langPrefix.length);
+
+    // Get the part of the path before /en/ or /fr/
+    const baseUrl = currentPath.substring(0, currentPath.indexOf(langPrefix));
 
     if (preferredLang) {
-        const isOnEnglishPage = window.location.pathname.includes('/en/');
-        if (preferredLang === 'en' && !isOnEnglishPage) {
-            // Redirect to the English version
-            const currentPage = window.location.pathname.split('/').pop() || 'index';
-            window.location.href = `../en/${currentPage}`;
-        } else if (preferredLang === 'fr' && isOnEnglishPage) {
-            // Redirect to the French version (default structure)
-            const currentPage = window.location.pathname.split('/').pop() || 'index';
-            window.location.href = `../fr/${currentPage}`;
+        // Only apply redirection if it's not a browser history navigation
+        if (window.performance.navigation.type !== 2) { // 2 = Back/forward navigation
+            if (preferredLang === 'en' && !currentPath.includes('/en/')) {
+                const targetUrl = `${baseUrl}/fr/${pathAfterLang}${window.location.search}`;
+                window.location.href = targetUrl;
+                localStorage.setItem("preferredLang",'fr');
+            } else if (preferredLang === 'fr' && !currentPath.includes('/fr/')) {
+                const targetUrl = `${baseUrl}/en/${pathAfterLang}${window.location.search}`;
+                window.location.href = targetUrl;
+                localStorage.setItem("preferredLang",'en');
+
+            }
         }
     }
+
+    // Update preferred language on browser history navigation (back/forward)
+    window.addEventListener("popstate", () => {
+        const currentPath = window.location.pathname;
+        const isCurrentlyEnglish = currentPath.includes('/en/');
+        const isCurrentlyFrench = currentPath.includes('/fr/');
+
+        // Update the language preference based on the URL when navigating through history
+        if (isCurrentlyEnglish) {
+            localStorage.setItem("preferredLang", 'en');
+        } else if (isCurrentlyFrench) {
+            localStorage.setItem("preferredLang", 'fr');
+        }
+
+        console.log("Language updated based on history navigation");
+    });
 });
+
 //##############################################################################################################################################
 //##############################################################################################################################################
 //handling the burgle click
